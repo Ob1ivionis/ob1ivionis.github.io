@@ -1,7 +1,7 @@
 # Font
 font:
   global_font_size: 18px
-  font_family: "'LXGW WenKai', '霞鹜文楷', 'KaiTi', 'STKaiti', serif"
+  font_family: "'LXGW WenKai', '霞鹜文楷', serif"
   code_font_family: "'Consolas', 'Cascadia Code', 'Fira Code', monospace"
 
 # Sidebar
