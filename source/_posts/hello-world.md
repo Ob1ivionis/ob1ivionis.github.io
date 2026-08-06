@@ -1,5 +1,6 @@
 ---
 title: Hello SEKAI
+date: 2026-05-05
 ---
 
 
