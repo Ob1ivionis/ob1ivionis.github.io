@@ -1,0 +1,29 @@
+# Font
+font:
+  global_font_size: 18px
+  font_family: "'LXGW WenKai', '霞鹜文楷', 'KaiTi', 'STKaiti', serif"
+  code_font_family: "'Consolas', 'Cascadia Code', 'Fira Code', monospace"
+
+# Sidebar
+aside:
+  card_announcement:
+    content: 欢迎来到SOS的世界
+
+# Table of Contents
+toc:
+  number: false
+
+# Index post preview
+index_post_content:
+  method: 2
+  length: 120
+
+# Cover
+cover:
+  default_cover: /img/akiyama_mizuki_01.jpg
+
+# Inject CSS for LXGW WenKai web font
+inject:
+  head:
+    - '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/lxgwwenkai@3.0.0/dist/LXGWWenKai-Regular/result.css">'
+    - '<style>#recent-posts > .recent-post-item { padding: 8px 20px; } #recent-posts .post_cover img { height: 160px; } #post .post-cover img { height: 350px; }</style>'
