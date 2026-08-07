@@ -27,3 +27,19 @@ inject:
   head:
     - '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/lxgwwenkai@3.0.0/dist/LXGWWenKai-Regular/result.css">'
     - '<style>#recent-posts > .recent-post-item { padding: 8px 20px; } #recent-posts .post_cover img { height: 160px; } #post .post-cover img { height: 350px; }</style>'
+
+# Navigation Menu
+menu:
+  首页: / || fas fa-home
+  分类: /categories/ || fas fa-folder-open
+  所有标签: /tags/ || fas fa-tags
+  归档: /archives/ || fas fa-archive
+  搜索: javascript:void(0); || fas fa-search
+  私密空间: /private/ || fas fa-lock
+
+# Private Space
+private:
+  enable: true
+  password: "sos2026"
+  path: private
+  title: 私密空间

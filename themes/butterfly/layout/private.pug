@@ -1,0 +1,199 @@
+extends includes/layout.pug
+
+block content
+  #private-space
+    #private-lock
+      .private-lock-container
+        h2.private-lock-title= page.title || '私密空间'
+        p.private-lock-desc 此空间需要密码才能访问
+        .private-lock-form
+          input#private-password(
+            type="password"
+            placeholder="请输入密码"
+            autocomplete="off"
+          )
+          button#private-submit(type="button") 解锁
+          p#private-error
+
+    #private-content(style="display:none;")
+      .private-toolbar
+        .private-tabs
+          button.private-tab.active(data-tab="posts") 文章
+          button.private-tab(data-tab="categories") 分类
+          button.private-tab(data-tab="tags") 标签
+        .private-search-box
+          input#private-search-input(
+            type="text"
+            placeholder="搜索私密文章..."
+          )
+      #private-posts-panel.private-panel.active
+        #private-posts-list
+      #private-categories-panel.private-panel
+        #private-categories-list
+      #private-tags-panel.private-panel
+        #private-tags-list
+
+  style.
+    #private-lock { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
+    .private-lock-container { text-align: center; max-width: 400px; width: 100%; padding: 40px 32px; background: var(--card-bg, #fff); border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .private-lock-title { margin-bottom: 8px; font-size: 1.4em; color: var(--font-color, #333); }
+    .private-lock-desc { margin-bottom: 24px; color: var(--font-secondary-color, #999); font-size: 0.9em; }
+    #private-password { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; margin-bottom: 16px; box-sizing: border-box; background: var(--input-bg, #fff); color: var(--font-color, #333); }
+    #private-password:focus { outline: none; border-color: #49b1f5; }
+    #private-password.input-error { border-color: #f44336; }
+    #private-submit { padding: 10px 36px; background: #49b1f5; color: #fff; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+    #private-submit:hover { background: #3a8fd4; }
+    #private-error { display: none; color: #f44336; margin-top: 12px; font-size: 0.9em; }
+    .private-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .private-tabs { display: flex; gap: 4px; }
+    .private-tab { padding: 6px 16px; border: 1px solid #ddd; background: var(--card-bg, #fff); color: var(--font-color, #333); border-radius: 20px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+    .private-tab.active { background: #49b1f5; color: #fff; border-color: #49b1f5; }
+    .private-tab:hover:not(.active) { border-color: #49b1f5; color: #49b1f5; }
+    .private-search-box { flex: 1; min-width: 180px; max-width: 300px; }
+    #private-search-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; font-size: 0.9em; box-sizing: border-box; background: var(--input-bg, #fff); color: var(--font-color, #333); }
+    #private-search-input:focus { outline: none; border-color: #49b1f5; }
+    .private-panel { display: none; }
+    .private-panel.active { display: block; }
+    #private-posts-list { display: flex; flex-direction: column; gap: 16px; }
+    .private-post-item { display: flex; overflow: hidden; border-radius: 8px; background: var(--card-bg, #fff); box-shadow: 0 1px 6px rgba(0,0,0,0.06); transition: all 0.3s ease; text-decoration: none; color: inherit; }
+    .private-post-item:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); transform: translateY(-2px); }
+    .private-post-cover { width: 220px; min-height: 140px; flex-shrink: 0; overflow: hidden; position: relative; }
+    .private-post-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .private-post-item:hover .private-post-cover img { transform: scale(1.05); }
+    .private-post-info { flex: 1; min-width: 0; padding: 16px 20px; display: flex; flex-direction: column; justify-content: center; }
+    .private-post-info .post-title-link { font-size: 1.15em; font-weight: 600; color: var(--font-color, #333); text-decoration: none; margin-bottom: 8px; display: block; transition: color 0.2s; }
+    .private-post-info .post-title-link:hover { color: #49b1f5; }
+    .private-post-info .post-meta { font-size: 0.82em; color: var(--font-secondary-color, #999); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .private-post-info .post-meta i { margin-right: 3px; }
+    .private-post-info .post-excerpt { font-size: 0.88em; color: var(--font-secondary-color, #666); line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    @media screen and (max-width: 768px) { .private-post-item { flex-direction: column; } .private-post-cover { width: 100%; min-height: 160px; max-height: 200px; } }
+    .private-cat-list { list-style: none; padding: 0; margin: 0; }
+    .private-cat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-bottom: 6px; background: var(--card-bg, #fff); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .private-cat-item:hover { background: rgba(73,177,245,0.08); transform: translateX(4px); }
+    .private-cat-name { font-weight: 500; color: var(--font-color, #333); }
+    .private-cat-count { background: #49b1f5; color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; }
+    .private-tag-cloud { padding: 16px; background: var(--card-bg, #fff); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .private-tag-item { color: #49b1f5; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+    .private-tag-item:hover { opacity: 0.7; transform: scale(1.08); }
+    .private-tag-item sup { font-size: 0.7em; color: #999; margin-left: 1px; }
+
+  script.
+    (function() {
+      var STORAGE_KEY = 'private_space_unlocked';
+      var ENC_FILE = '/private-posts.enc';
+      var lockEl = document.getElementById('private-lock');
+      var contentEl = document.getElementById('private-content');
+      var pwInput = document.getElementById('private-password');
+      var submitBtn = document.getElementById('private-submit');
+      var errorEl = document.getElementById('private-error');
+      var postsList = document.getElementById('private-posts-list');
+      var categoriesList = document.getElementById('private-categories-list');
+      var tagsList = document.getElementById('private-tags-list');
+      var searchInput = document.getElementById('private-search-input');
+      var allPosts = [];
+      var activeTab = 'posts';
+
+      function hex2(h){var b=new Uint8Array(h.length/2);for(var i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b;}
+      async function deriveKey(pw,salt){var enc=new TextEncoder();var km=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:100000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);}
+      async function decrypt(encJSON,pw){var o=JSON.parse(encJSON);var s=hex2(o.salt),iv=hex2(o.iv),at=hex2(o.authTag),d=hex2(o.data);var key=await deriveKey(pw,s);var c=new Uint8Array(d.length+at.length);c.set(d);c.set(at,d.length);var dec=await crypto.subtle.decrypt({name:'AES-GCM',iv:iv,tagLength:128},key,c);return new TextDecoder().decode(dec);}
+      function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+      function stripHtml(html){var d=document.createElement('div');d.innerHTML=html;return d.textContent||'';}
+
+      function renderPosts(posts){
+        if(!posts.length){postsList.innerHTML='<p style="text-align:center;color:#999;padding:40px;">暂无文章</p>';return;}
+        var html='';
+        posts.forEach(function(p){
+          var coverHtml='';
+          if(p.cover){coverHtml='<div class="private-post-cover"><img src="'+esc(p.cover)+'" alt="'+esc(p.title)+'" onerror="this.style.display=\'none\'"></div>';}
+          var cats='',tags='';
+          if(p.categories&&p.categories.length)cats='<span class="p-meta"><i class="fas fa-folder"></i> '+esc(p.categories.join(' / '))+'</span>';
+          if(p.tags&&p.tags.length)tags='<span class="p-meta"><i class="fas fa-tag"></i> '+esc(p.tags.join(' · '))+'</span>';
+          var excerpt=p.excerpt||stripHtml(p.content||'').substring(0,150);
+          html+='<a href="'+esc(p.url||'/'+p.path)+'" class="private-post-item">'+
+            coverHtml+
+            '<div class="private-post-info">'+
+            '<span class="post-title-link">'+esc(p.title)+'</span>'+
+            '<div class="post-meta"><span><i class="far fa-calendar-alt"></i> '+esc(p.date)+'</span>'+cats+tags+'</div>'+
+            '<div class="post-excerpt">'+esc(excerpt)+'</div>'+
+            '</div></a>';
+        });
+        postsList.innerHTML=html;
+      }
+
+      function renderCategories(){
+        var map=new Map();
+        allPosts.forEach(function(p){(p.categories||[]).forEach(function(c){if(!map.has(c))map.set(c,[]);map.get(c).push(p);});});
+        if(!map.size){categoriesList.innerHTML='<p style="text-align:center;color:#999;padding:40px;">暂无分类</p>';return;}
+        var html='<ul class="private-cat-list">';
+        map.forEach(function(posts,name){html+='<li class="private-cat-item" data-cat="'+esc(name)+'"><span class="private-cat-name">'+esc(name)+'</span><span class="private-cat-count">'+posts.length+'</span></li>';});
+        html+='</ul>';
+        categoriesList.innerHTML=html;
+        categoriesList.querySelectorAll('.private-cat-item').forEach(function(el){el.addEventListener('click',function(){var cat=this.dataset.cat;switchTab('posts');renderPosts(allPosts.filter(function(p){return(p.categories||[]).includes(cat);}));});});
+      }
+
+      function renderTags(){
+        var map=new Map();
+        allPosts.forEach(function(p){(p.tags||[]).forEach(function(t){if(!map.has(t))map.set(t,[]);map.get(t).push(p);});});
+        if(!map.size){tagsList.innerHTML='<p style="text-align:center;color:#999;padding:40px;">暂无标签</p>';return;}
+        var max=Math.max.apply(null,[...map.values()].map(function(v){return v.length;}));
+        var html='<div class="private-tag-cloud">';
+        map.forEach(function(posts,name){var s=0.9+(posts.length/max)*1.2;html+='<a class="private-tag-item" data-tag="'+esc(name)+'" style="font-size:'+s.toFixed(1)+'em">'+esc(name)+'<sup>'+posts.length+'</sup></a>';});
+        html+='</div>';
+        tagsList.innerHTML=html;
+        tagsList.querySelectorAll('.private-tag-item').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();var tag=this.dataset.tag;switchTab('posts');renderPosts(allPosts.filter(function(p){return(p.tags||[]).includes(tag);}));});});
+      }
+
+      function switchTab(tab){
+        activeTab=tab;
+        document.querySelectorAll('.private-tab').forEach(function(t){t.classList.remove('active');});
+        document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
+        document.querySelectorAll('.private-panel').forEach(function(p){p.classList.remove('active');});
+        document.getElementById('private-'+tab+'-panel').classList.add('active');
+        if(tab==='categories')renderCategories();
+        else if(tab==='tags')renderTags();
+        else renderPosts(allPosts);
+      }
+
+      function search(q){
+        var t=q.toLowerCase().trim();
+        if(!t){switchTab(activeTab);return;}
+        switchTab('posts');
+        renderPosts(allPosts.filter(function(p){return p.title.toLowerCase().includes(t)||(p.content||'').toLowerCase().includes(t)||(p.categories||[]).some(function(c){return c.toLowerCase().includes(t);})||(p.tags||[]).some(function(t2){return t2.toLowerCase().includes(t);});}));
+      }
+
+      function showContent(data){
+        allPosts=data;
+        lockEl.style.display='none';
+        contentEl.style.display='block';
+        renderPosts(allPosts);
+        renderCategories();
+        renderTags();
+        sessionStorage.setItem(STORAGE_KEY,'true');
+      }
+
+      async function handleUnlock(){
+        var pw=pwInput.value.trim();
+        if(!pw){errorEl.textContent='请输入密码';errorEl.style.display='block';return;}
+        try{
+          var resp=await fetch(ENC_FILE);
+          if(!resp.ok)throw new Error('文件不存在');
+          var encJSON=await resp.text();
+          var decrypted=await decrypt(encJSON,pw);
+          var data=JSON.parse(decrypted);
+          errorEl.style.display='none';
+          pwInput.classList.remove('input-error');
+          showContent(data);
+        }catch(e){
+          console.error(e);
+          errorEl.textContent='密码错误';
+          errorEl.style.display='block';
+          pwInput.classList.add('input-error');
+        }
+      }
+
+      submitBtn.addEventListener('click',handleUnlock);
+      pwInput.addEventListener('keydown',function(e){if(e.key==='Enter')handleUnlock();errorEl.style.display='none';pwInput.classList.remove('input-error');});
+      document.querySelectorAll('.private-tab').forEach(function(tab){tab.addEventListener('click',function(){switchTab(this.dataset.tab);});});
+      searchInput.addEventListener('input',function(){search(this.value);});
+      if(sessionStorage.getItem(STORAGE_KEY)==='true')handleUnlock();
+    })();
