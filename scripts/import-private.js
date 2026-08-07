@@ -41,9 +41,10 @@ hexo.extend.filter.register('after_init', function() {
   const privateNames = new Set(files);
   const existingFiles = fs.readdirSync(targetDir).filter(f => f.endsWith('.md'));
   existingFiles.forEach(file => {
-    // 检查是否是私密文章（含有 private: true）
+    // 只检查 frontmatter 中的 private: true（两个 --- 之间的内容）
     const content = fs.readFileSync(path.join(targetDir, file), 'utf8');
-    if (/private:\s*true/.test(content)) {
+    const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
+    if (fmMatch && /private:\s*true/.test(fmMatch[1])) {
       if (!privateNames.has(file)) {
         fs.unlinkSync(path.join(targetDir, file));
         hexo.log.info('[import-private] Removed stale: ' + file);
