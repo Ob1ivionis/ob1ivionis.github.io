@@ -35,7 +35,17 @@ function encryptPrivatePosts(hexo, posts, password) {
 }
 
 hexo.extend.filter.register('before_generate', function() {
-  const cfg = (hexo.config.theme_config || hexo.theme.config || {}).private;
+  let cfg = (hexo.config.theme_config || hexo.theme.config || {}).private;
+  // 从独立文件读取密码（不提交到公开仓库）
+  if (cfg && cfg.enable) {
+    const fs = require('fs');
+    const path = require('path');
+    const pwFile = path.join(hexo.base_dir, '_private_password');
+    try {
+      const pw = fs.readFileSync(pwFile, 'utf8').trim();
+      if (pw) cfg = Object.assign({}, cfg, { password: pw });
+    } catch (e) { /* 文件不存在，使用 config 中的值 */ }
+  }
   if (!cfg || !cfg.enable) return;
 
   const Post = hexo.database.model('Post');
@@ -128,6 +138,15 @@ hexo.extend.filter.register('before_generate', function() {
         }));
       }, []);
   });
+
+  // === 确保每个 post 的 path 作为 own property 可访问 ===
+  var allPosts = Post.toArray();
+  allPosts.forEach(p => {
+    if (p.date) {
+      p._link = p.date.format('YYYY/MM/DD') + '/' + (p.slug || '');
+    }
+  });
+  console.log('[private-filter] _link set on ' + allPosts.length + ' posts, first: ' + (allPosts[0] ? allPosts[0]._link : 'none'));
 
   // === toObject 过滤 + 确保封面图 ===
   const themeCfg = hexo.config.theme_config || hexo.theme.config || {};

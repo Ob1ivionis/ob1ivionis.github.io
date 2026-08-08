@@ -1,6 +1,6 @@
 ---
 title: 网站使用与发文指南
-date: 2026-08-08 12:00:00
+date: 2026-08-08 13:00:00
 categories: 网站
 tags:
   - 指南
@@ -163,5 +163,6 @@ hexo clean && hexo generate   # 清理缓存重新生成
 - 私密文章**务必**在 frontmatter 中加 `private: true`
 - 私密源文件写完及时 `cd private-posts && git push` 备份
 - 图片放在 `source/img/`，文章中引用 `/img/文件名.jpg`
-- 私密密码在 `_config.butterfly.yml` → `private.password`
+- 私密密码存放在项目根目录的 **`_private_password`** 文件中（已加入 `.gitignore`，不会提交到公开仓库）
+- 首次使用时复制 `_private_password.example` 为 `_private_password`，填入你的密码
 - 部署前先 `hexo server` 本地确认

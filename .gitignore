@@ -6,5 +6,6 @@ node_modules/
 public/
 .deploy*/
 private-posts/
+_private_password
 source/_posts/private-*
 _multiconfig.yml

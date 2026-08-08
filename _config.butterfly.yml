@@ -40,6 +40,6 @@ menu:
 # Private Space
 private:
   enable: true
-  password: "sos2026"
   path: private
   title: 私密空间
+  # 密码存放在项目根目录的 _private_password 文件中（已加入 .gitignore）
