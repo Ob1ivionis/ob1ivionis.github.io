@@ -4,13 +4,15 @@ date: 2026-08-11 04:59:00
 categories: 判型分析
 tags:
   - ESE
-cover: /img/emu_001.jpg
+cover: /img/emu_nene_001.jpg
 判型:
   - 临时小组A
 整理:
   - aya
 ---
 > 我挥一挥衣袖，不带走一片云彩。
+
+- 图文无关注意（博客均为图文无关）
 
 # 1 总述
 
