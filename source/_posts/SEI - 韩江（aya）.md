@@ -4,7 +4,7 @@ date: 2026-08-05 22:00:00
 categories: 判型分析
 tags:
   - SEI
-cover: /img/ena_001.jpg
+cover: /img/hnm_001.jpg
 判型:
   
 整理:
