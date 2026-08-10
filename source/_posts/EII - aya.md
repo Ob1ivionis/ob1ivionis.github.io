@@ -1,9 +1,11 @@
 ---
 title: EII - aya
 date: 2026-05-05 21:00:00
+published: false
 categories: 判型分析/群友判型分析
 tags:
   - EII
+cover: /img/akiyama_mizuki_01.jpg
 判型:
   - 6子
 整理:

@@ -214,7 +214,17 @@ hexo.extend.filter.register('before_generate', function() {
         try { result[key].length = result[key].data.length; } catch(e) {}
       }
     });
-    // categories 和 tags 的过滤已在 generator override 中处理
+    // 过滤 tags 和 categories 的计数（排除私密文章的标签/分类）
+    if (Post) {
+      const publicTags = new Set();
+      const publicCats = new Set();
+      Post.toArray().filter(p => !p.private).forEach(p => {
+        (p.tags || []).data.forEach(t => publicTags.add(t.name));
+        (p.categories || []).data.forEach(c => publicCats.add(c.name));
+      });
+      if (result.tags) try { result.tags.length = publicTags.size; } catch(e) {}
+      if (result.categories) try { result.categories.length = publicCats.size; } catch(e) {}
+    }
     return result;
   };
 
