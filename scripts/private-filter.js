@@ -177,9 +177,15 @@ hexo.extend.filter.register('before_generate', function() {
   // === 注册过滤版 helpers（必须在 before_generate 中，覆盖主题的注册）===
   registerFilteredHelpers(hexo);
 
-  // === 确保每个 post 的 path 作为 own property 可访问 ===
+  // === 确保 cover_type 在任何 generator 之前就设置好 ===
+  const imgTest = /\.(png|jpe?g|gif|svg|webp|avif)(\?.*)?$/i;
+  const themeCfg3 = hexo.config.theme_config || hexo.theme.config || {};
+  const defCover = (themeCfg3.cover || {}).default_cover;
+  const defCoverSrc = Array.isArray(defCover) ? defCover[0] : defCover;
   var allPosts = Post.toArray();
   allPosts.forEach(p => {
+    if (!p.cover && defCoverSrc) { p.cover = defCoverSrc; p.cover_type = 'img'; }
+    if (p.cover && !p.cover_type && imgTest.test(p.cover)) { p.cover_type = 'img'; }
     if (p.date) {
       p._link = p.date.format('YYYY/MM/DD') + '/' + (p.slug || '');
     }
@@ -203,6 +209,7 @@ hexo.extend.filter.register('before_generate', function() {
         // 确保每个公开文章都有封面图
         result[key].data.forEach(p => {
           if (!p.cover && coverSrc) { p.cover = coverSrc; p.cover_type = 'img'; }
+          if (p.cover && !p.cover_type && imgTestReg.test(p.cover)) { p.cover_type = 'img'; }
         });
         try { result[key].length = result[key].data.length; } catch(e) {}
       }
