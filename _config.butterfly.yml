@@ -18,6 +18,14 @@ index_post_content:
   method: 2
   length: 120
 
+# Background
+background: "#ffffff"
+index_img: /img/background.jpg
+category_img: /img/background.jpg
+tag_img: /img/background.jpg
+archive_img: /img/background.jpg
+default_top_img: /img/background.jpg
+
 # Cover
 cover:
   default_cover: /img/akiyama_mizuki_01.jpg
@@ -26,7 +34,16 @@ cover:
 inject:
   head:
     - '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/lxgwwenkai@3.0.0/dist/LXGWWenKai-Regular/result.css">'
-    - '<style>#recent-posts > .recent-post-item { padding: 8px 20px; } #recent-posts .post_cover img { height: 160px; } #post .post-cover img { height: 350px; }</style>'
+    - '<style>#recent-posts>.recent-post-item{padding:8px 20px}#recent-posts .post_cover img{height:160px}#post .post-cover img{height:350px}#body-wrap.post #content-inner{background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 6px rgba(0,0,0,.04)}.click-ripple{position:fixed;pointer-events:none;border-radius:50%;background:rgba(73,177,245,.4);animation:ripple .6s ease-out forwards;z-index:9999}@keyframes ripple{0%{width:0;height:0;opacity:1;transform:translate(-50%,-50%) scale(0)}100%{width:60px;height:60px;opacity:0;transform:translate(-50%,-50%) scale(1)}}</style>'
+  bottom:
+    - '<script>document.addEventListener("click",function(e){var r=document.createElement("div");r.className="click-ripple";r.style.left=e.clientX+"px";r.style.top=e.clientY+"px";document.body.appendChild(r);setTimeout(function(){r.remove()},600)})</script>'
+
+# Search
+search:
+  use: local_search
+  local_search:
+    enable: true
+    preload: true
 
 # Navigation Menu
 menu:
@@ -34,7 +51,6 @@ menu:
   分类: /categories/ || fas fa-folder-open
   所有标签: /tags/ || fas fa-tags
   归档: /archives/ || fas fa-archive
-  搜索: javascript:void(0); || fas fa-search
   私密空间: /private/ || fas fa-lock
 
 # Private Space

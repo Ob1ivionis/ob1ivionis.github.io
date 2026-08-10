@@ -101,43 +101,81 @@ hexo.extend.filter.register('before_generate', function() {
       if (i > 0) p.prev = posts[i - 1];
       if (i < posts.length - 1) p.next = posts[i + 1];
     });
-    return posts.map(p => {
+    // prev/next 只在同类（公开/私密）文章间跳转
+    posts.forEach(p => {
+      var prev = p.prev;
+      while (prev && prev.private !== p.private) prev = prev.prev;
+      p.prev = prev || null;
+      var next = p.next;
+      while (next && next.private !== p.private) next = next.next;
+      p.next = next || null;
+    });
+    const result = posts.map(p => {
       p.__post = true;
       return { data: handleImg(p), layout: 'post', path: p.path };
     });
+    console.log('[private-filter] post generator returning ' + result.length + ' pages');
+    return result;
   });
 
-  // === 重写 category generator（过滤私密）===
+  // === 重写 category generator（从数据库直接查，绕过 locals）===
   hexo.extend.generator.register('category', function(locals) {
     const config = this.config;
-    return locals.categories.data
-      .filter(cat => cat.posts && cat.posts.data && cat.posts.data.some(p => !p.private))
-      .reduce((result, cat) => {
-        const filtered = cat.posts.data.filter(p => !p.private).sort((a, b) => b.date - a.date);
-        return result.concat(pagination(cat.path, filtered, {
-          perPage: config.category_generator.per_page,
-          layout: ['category', 'archive', 'index'],
-          format: (config.pagination_dir || 'page') + '/%d/',
-          data: { category: cat.name }
-        }));
-      }, []);
+    const Post = hexo.database.model('Post');
+    const allPosts = Post.toArray().filter(p => !p.private);
+
+    // 手动重建分类-文章映射
+    const catMap = new Map();
+    allPosts.forEach(p => {
+      (p.categories || []).data.forEach(c => {
+        if (!catMap.has(c._id)) catMap.set(c._id, { name: c.name, path: c.path, posts: [] });
+        catMap.get(c._id).posts.push(p);
+      });
+    });
+
+    return [...catMap.values()].reduce((result, cat) => {
+      const sorted = cat.posts.sort((a, b) => b.date - a.date);
+      return result.concat(pagination(cat.path, sorted, {
+        perPage: config.category_generator.per_page,
+        layout: ['category', 'archive', 'index'],
+        format: (config.pagination_dir || 'page') + '/%d/',
+        data: { category: cat.name }
+      }));
+    }, []);
   });
 
-  // === 重写 tag generator（过滤私密）===
+  // === 重写 tag generator（从数据库直接查）===
   hexo.extend.generator.register('tag', function(locals) {
     const config = this.config;
-    return locals.tags.data
-      .filter(tag => tag.posts && tag.posts.data && tag.posts.data.some(p => !p.private))
-      .reduce((result, tag) => {
-        const filtered = tag.posts.data.filter(p => !p.private).sort((a, b) => b.date - a.date);
-        return result.concat(pagination(tag.path, filtered, {
-          perPage: config.tag_generator.per_page,
-          layout: ['tag', 'archive', 'index'],
-          format: (config.pagination_dir || 'page') + '/%d/',
-          data: { tag: tag.name }
-        }));
-      }, []);
+    const Post = hexo.database.model('Post');
+    const allPosts = Post.toArray().filter(p => !p.private);
+
+    const tagMap = new Map();
+    allPosts.forEach(p => {
+      (p.tags || []).data.forEach(t => {
+        if (!tagMap.has(t._id)) tagMap.set(t._id, { name: t.name, path: t.path, posts: [] });
+        tagMap.get(t._id).posts.push(p);
+      });
+    });
+
+    return [...tagMap.values()].reduce((result, tag) => {
+      const sorted = tag.posts.sort((a, b) => b.date - a.date);
+      return result.concat(pagination(tag.path, sorted, {
+        perPage: config.tag_generator.per_page,
+        layout: ['tag', 'archive', 'index'],
+        format: (config.pagination_dir || 'page') + '/%d/',
+        data: { tag: tag.name }
+      }));
+    }, []);
   });
+
+  // === 删除多余的"搜索"菜单项 ===
+  if (hexo.theme.config.menu && hexo.theme.config.menu['搜索']) {
+    delete hexo.theme.config.menu['搜索'];
+  }
+
+  // === 注册过滤版 helpers（必须在 before_generate 中，覆盖主题的注册）===
+  registerFilteredHelpers(hexo);
 
   // === 确保每个 post 的 path 作为 own property 可访问 ===
   var allPosts = Post.toArray();
@@ -148,7 +186,8 @@ hexo.extend.filter.register('before_generate', function() {
   });
   console.log('[private-filter] _link set on ' + allPosts.length + ' posts, first: ' + (allPosts[0] ? allPosts[0]._link : 'none'));
 
-  // === toObject 过滤 + 确保封面图 ===
+
+  // === toObject 过滤（只过滤 posts/pages，不动 categories/tags）===
   const themeCfg = hexo.config.theme_config || hexo.theme.config || {};
   const defaultCover = (themeCfg.cover || {}).default_cover;
   const coverSrc = Array.isArray(defaultCover) ? defaultCover[0] : defaultCover;
@@ -165,23 +204,10 @@ hexo.extend.filter.register('before_generate', function() {
         result[key].data.forEach(p => {
           if (!p.cover && coverSrc) { p.cover = coverSrc; p.cover_type = 'img'; }
         });
-        delete result[key].length;
+        try { result[key].length = result[key].data.length; } catch(e) {}
       }
     });
-    ['categories', 'tags'].forEach(key => {
-      if (result[key] && result[key].data) {
-        result[key].data.forEach(item => {
-          if (item.posts && item.posts.data) {
-            item.posts.data = item.posts.data.filter(p => !p.private);
-            delete item.posts.length;
-          }
-        });
-        result[key].data = result[key].data.filter(item => {
-          return item.posts && item.posts.data && item.posts.data.length > 0;
-        });
-        delete result[key].length;
-      }
-    });
+    // categories 和 tags 的过滤已在 generator override 中处理
     return result;
   };
 
@@ -249,10 +275,233 @@ hexo.extend.filter.register('after_render:html', function(str, data) {
   return str;
 });
 
+// 确保 categories 和 tags 列表页生成
+hexo.extend.generator.register('category-index', function(locals) {
+  return {
+    path: 'categories/index.html',
+    layout: ['page'],
+    data: { type: 'categories', title: '分类', top_img: '/img/background.jpg' }
+  };
+});
+hexo.extend.generator.register('tag-index', function(locals) {
+  return {
+    path: 'tags/index.html',
+    layout: ['page'],
+    data: { type: 'tags', title: '所有标签', top_img: '/img/background.jpg' }
+  };
+});
+
 // 加密数据文件生成器
 hexo.extend.generator.register('private-data', function(locals) {
   if (!hexo._encryptedData) return;
   return { path: 'private-posts.enc', data: hexo._encryptedData };
+});
+
+// 计算公开分类/标签数据（供所有 helper 共享）
+function getPublicTaxData(hexo) {
+  const Post = hexo.database.model('Post');
+  const catNames = new Set();
+  const tagNames = new Set();
+  const catCounts = new Map();
+  const tagCounts = new Map();
+  if (!Post) return { catNames, tagNames, catCounts, tagCounts };
+  Post.toArray().filter(p => !p.private).forEach(p => {
+    (p.categories || []).data.forEach(c => {
+      catNames.add(c.name);
+      catCounts.set(c.name, (catCounts.get(c.name) || 0) + 1);
+    });
+    (p.tags || []).data.forEach(t => {
+      tagNames.add(t.name);
+      tagCounts.set(t.name, (tagCounts.get(t.name) || 0) + 1);
+    });
+  });
+  return { catNames, tagNames, catCounts, tagCounts };
+}
+
+function registerFilteredHelpers(hexo) {
+  const h = hexo.extend.helper;
+  const Post = hexo.database.model('Post');
+  const catNames = new Set();
+  const tagNames = new Set();
+  const catCounts = new Map();
+  const tagCounts = new Map();
+  Post.toArray().filter(p => !p.private).forEach(p => {
+    (p.categories || []).data.forEach(c => {
+      catNames.add(c.name);
+      catCounts.set(c.name, (catCounts.get(c.name) || 0) + 1);
+    });
+    (p.tags || []).data.forEach(t => {
+      tagNames.add(t.name);
+      tagCounts.set(t.name, (tagCounts.get(t.name) || 0) + 1);
+    });
+  });
+  return { catNames, tagNames, catCounts, tagCounts };
+}
+
+// 过滤版 list_categories helper
+hexo.extend.helper.register('list_categories', function(categories, options) {
+  if (!options && (!categories || typeof categories.length === 'undefined')) {
+    options = categories;
+    categories = this.site.categories;
+  }
+  if (!categories || !categories.length) return '';
+
+  const { catNames, catCounts } = getPublicTaxData();
+  const filtered = categories.toArray().filter(c => catNames.has(c.name));
+
+  options = options || {};
+  const style = options.style || 'list';
+  const showCount = options.show_count !== undefined ? options.show_count : true;
+  const depth = options.depth ? parseInt(options.depth, 10) : 0;
+
+  // 简化版：只支持 list 样式
+  var result = '<ul class="category-list">';
+  var render = function(parent) {
+    var html = '';
+    filtered.forEach(function(cat) {
+      var catParent = cat.parent ? String(cat.parent) : '';
+      if (catParent !== String(parent || '')) return;
+      var child = render(cat._id);
+      html += '<li class="category-list-item">';
+      html += '<a class="category-list-link" href="' + this.url_for(cat.path) + '">' + cat.name + '</a>';
+      if (showCount) html += '<span class="category-list-count">' + (catCounts.get(cat.name) || 0) + '</span>';
+      if (child) html += '<ul class="category-list-child">' + child + '</ul>';
+      html += '</li>';
+    }, this);
+    return html;
+  }.bind(this);
+  result += render(null);
+  result += '</ul>';
+  return result;
+});
+
+// 过滤版 list_tags helper
+hexo.extend.helper.register('list_tags', function(tags, options) {
+  if (!options && (!tags || typeof tags.length === 'undefined')) {
+    options = tags;
+    tags = this.site.tags;
+  }
+  if (!tags || !tags.length) return '';
+
+  const { tagNames, tagCounts } = getPublicTaxData();
+  const filtered = tags.toArray().filter(t => tagNames.has(t.name));
+  if (!filtered.length) return '';
+
+  options = options || {};
+  const min = options.min_font || 1;
+  const max = options.max_font || 2;
+  const unit = options.unit || 'em';
+  const orderby = options.orderby || 'name';
+  const order = options.order || 1;
+
+  filtered.sort((a, b) => orderby === 'length' ?
+    (order * (a.length - b.length)) : (order * a.name.localeCompare(b.name)));
+
+  var html = '<div class="tag-cloud-list text-center">';
+  filtered.forEach(function(t) {
+    var size = min + (((tagCounts.get(t.name) || 0) / Math.max(...filtered.map(x => x.posts.data.filter(p => !p.private).length))) * (max - min));
+    if (isNaN(size)) size = min;
+    html += '<a href="' + this.url_for(t.path) + '" style="font-size: ' + size.toFixed(1) + unit + '">' + t.name + '</a>';
+  }, this);
+  html += '</div>';
+  return html;
+});
+
+// 过滤版 tagcloud helper（侧边栏用）
+hexo.extend.helper.register('tagcloud', function(tags, options) {
+  if (!options && (!tags || typeof tags.length === 'undefined')) {
+    options = tags;
+    tags = this.site.tags;
+  }
+  const { tagNames, tagCounts } = getPublicTaxData();
+  const filtered = tags.toArray().filter(t => tagNames.has(t.name));
+  if (!filtered.length) return '';
+
+  options = options || {};
+  const min = options.min_font || 1;
+  const max = options.max_font || 2;
+  const amount = options.amount || 40;
+  const unit = options.unit || 'em';
+  const color = options.color;
+  const start_color = options.start_color || '#999';
+  const end_color = options.end_color || '#99a9bf';
+  const orderby = options.orderby || 'name';
+  const order = options.order || 1;
+
+  filtered.sort((a, b) => orderby === 'length' ?
+    (order * (a.length - b.length)) : (order * a.name.localeCompare(b.name)));
+
+  var html = '';
+  filtered.slice(0, amount).forEach(function(t) {
+    var size = min + (((tagCounts.get(t.name) || 0) / Math.max(...filtered.map(x => x.posts.data.filter(p => !p.private).length))) * (max - min));
+    if (isNaN(size)) size = min;
+    html += '<a href="' + this.url_for(t.path) + '" style="font-size: ' + size.toFixed(1) + unit + ';';
+    if (color) html += ' color: ' + start_color;
+    html += '">' + t.name + '</a> ';
+  }, this);
+  return html;
+});
+hexo.extend.helper.register('tag_cloud', function() { return this.tagcloud.apply(this, arguments); });
+
+// 过滤版 cloudTags helper（标签列表页用）
+hexo.extend.helper.register('cloudTags', function(options) {
+  options = options || {};
+  const { tagNames, tagCounts } = getPublicTaxData();
+  const source = options.source || this.site.tags;
+  const all = source.toArray().filter(t => tagNames.has(t.name));
+  if (!all.length) return '';
+
+  const min = options.minfontsize || 1;
+  const max = options.maxfontsize || 2;
+  const unit = options.unit || 'em';
+  const orderby = options.orderby || 'name';
+  const order = options.order || 1;
+
+  all.sort((a, b) => orderby === 'length' ?
+    (order * ((tagCounts.get(a.name) || 0) - (tagCounts.get(b.name) || 0))) :
+    (order * a.name.localeCompare(b.name)));
+
+  var html = '<div class="tag-cloud-list text-center">';
+  all.forEach(function(t) {
+    const count = tagCounts.get(t.name) || 0;
+    const maxCount = Math.max(...all.map(x => tagCounts.get(x.name) || 0));
+    const size = min + (count / maxCount) * (max - min);
+    html += '<a href="' + this.url_for(t.path) + '" style="font-size: ' + (isNaN(size) ? min : size).toFixed(1) + unit + '">' + t.name + '</a>';
+  }, this);
+  html += '</div>';
+  return html;
+});
+
+// 过滤版 aside_categories helper（侧边栏用）
+hexo.extend.helper.register('aside_categories', function(categories, options) {
+  if (!options && (!categories || typeof categories.length === 'undefined')) {
+    options = categories;
+    categories = this.site.categories;
+  }
+  const { catNames, catCounts } = getPublicTaxData();
+  const filtered = categories.toArray().filter(c => catNames.has(c.name));
+  if (!filtered.length) return '';
+
+  options = options || {};
+  const showCount = options.show_count !== undefined ? options.show_count : true;
+
+  var html = '<ul class="card-category-list">';
+  var render = function(parent) {
+    var result = '';
+    filtered.forEach(function(cat) {
+      if (String(cat.parent || '') !== String(parent || '')) return;
+      result += '<li class="card-category-list-item">';
+      result += '<a class="card-category-list-link" href="' + this.url_for(cat.path) + '">';
+      result += '<span class="card-category-list-name">' + cat.name + '</span>';
+      if (showCount) result += '<span class="card-category-list-count">' + (catCounts.get(cat.name) || 0) + '</span>';
+      result += '</a>';
+      result += '</li>';
+    }, this);
+    return result;
+  }.bind(this);
+  html += render(null);
+  html += '</ul>';
+  return html;
 });
 
 // 私密页面生成器
